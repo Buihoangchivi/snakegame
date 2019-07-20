@@ -13,9 +13,9 @@
 using namespace std;
 
 extern FILE* f;
-extern int sp, pt, length, dir, kind, vip, pass, x[200], y[200];
+extern int sp, pt, length, dir, kind, vip, pass, x[200], y[200], xx, yy;
+extern float thoigian;
 extern short c[200][100];
-float ii;
 bool ok = true;
 
 void Arr()
@@ -25,36 +25,6 @@ void Arr()
 		x[i] = x[i - 1];
 		y[i] = y[i - 1];
 	}
-}
-
-DWORD WINAPI ThreadProc(LPVOID param)
-{
-	for (ii = 10; ii >= 0; ii -= 0.1)
-	{
-		COORD t = GetConsoleCursorPosition();
-		if (c[x[0]][y[0]] == 3) break;
-		Gotoxy(60, 22);
-		ChangeColor(15);
-		cout << "Your Time Remain: ";
-		if (ii >= 8) ChangeColor(10);
-		else if (ii >= 6) ChangeColor(9);
-		else if (ii >= 4) ChangeColor(11);
-		else if (ii >= 2) ChangeColor(14);
-		else ChangeColor(12);
-		printf("%.1f  ", ii);
-		Sleep(50);
-		Gotoxy(t.X, t.Y);
-		ChangeColor(14);
-	}
-	Increase_Point(2, ii);
-	COORD t = GetConsoleCursorPosition();
-	c[x[0]][y[0]] = 0;
-	Gotoxy(60, 22);
-	for (int j = 0; j < 20; j++)
-		cout << " ";
-	Gotoxy(t.X, t.Y);
-	ChangeColor(14);
-	return 0;
 }
 
 void Add_Tail(int a, int b)
@@ -239,11 +209,35 @@ void Down()
 void Save_Game()
 {
 	FILE* g = fopen("data.txt", "w");
-	if (kind < 7) fprintf(g, "1\n%d %d %d %d %d\n", kind, sp, pt, dir, length);
-	else fprintf(g, "1\n%d %d %d %d %d %d\n", kind, sp, pt, dir, length, pass);
+	if (kind < 7) fprintf(g, "1\n%d %d %d %d %d %d %f\n", kind, sp, pt, dir, length, vip, thoigian);
+	else fprintf(g, "1\n%d %d %d %d %d %d %f %d\n", kind, sp, pt, dir, length, vip, thoigian, pass);
 	for (int i = 0; i < length; i++)
 		fprintf(g, "%d %d\n", x[i], y[i]);
 	fclose(g);
+}
+
+void PrintTime()
+{
+	COORD t = GetConsoleCursorPosition();
+	Gotoxy(70, 27);
+	ChangeColor(15);
+	cout << "Remain Time: ";
+	if (thoigian >= 6) ChangeColor(10);
+	else if (thoigian >= 4.5) ChangeColor(9);
+	else if (thoigian >= 3) ChangeColor(11);
+	else if (thoigian >= 1.5) ChangeColor(6);
+	else ChangeColor(12);
+	printf("%0.1f", thoigian);
+	Gotoxy(t.X, t.Y);
+}
+
+void DeleteTime()
+{
+	COORD t = GetConsoleCursorPosition();
+	Gotoxy(70, 27);
+	for (int i = 0; i < 10; i++)
+		cout << "  ";
+	Gotoxy(t.X, t.Y);
 }
 
 bool Check()
@@ -267,6 +261,20 @@ bool Check()
 			{
 			}
 		}
+	}
+	if (thoigian > 0)
+	{
+		PrintTime();
+		thoigian -= 0.1f;
+	}
+	else if (thoigian != -1)
+	{
+		thoigian = -1;
+		COORD t = GetConsoleCursorPosition();
+		Gotoxy(xx, yy);
+		cout << " ";
+		DeleteTime();
+		Gotoxy(t.X, t.Y);
 	}
 	if (c[x[0]][y[0]] == 1) return false;
 	for (int i = 1; i <= length; i++)
@@ -295,16 +303,22 @@ bool Check()
 	}
 	if (c[x[0]][y[0]] == 2)
 	{
-		//vip++;
+		vip++;
 		c[x[0]][y[0]] = 0;
 		if (kind < 7 || (((kind == 7 || kind == 8) && pass < 30) || ((kind == 9 || kind == 10) && pass < 25)
 			|| (kind == 11 && pass < 20))) Make_Food('$', 2);
 		Increase_Point(1, 0);
-		/*if (vip % 1 == 0)
+		if (vip % 5 == 0)
 		{
-			Make_Food('#', 3);
-			CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)& ThreadProc, NULL, 0, NULL);
-		}*/
+			Make_Food('@', 4);
+			thoigian = 7.5;
+		}
+	}
+	else if (c[x[0]][y[0]] == 4)
+	{
+		Increase_Point(2, thoigian);
+		DeleteTime();
+		thoigian = -1;
 	}
 	return true;
 }
@@ -351,7 +365,7 @@ void Increase_Point(int k, float n)
 		case 5: pt += 6;
 			break;
 		}
-	else pt += (int)n * 10;
+	else pt += (int)(n * 10);
 	if (kind >= 7 && (pass + 1) % kind == 0) pt += kind;
 	COORD t = GetConsoleCursorPosition();
 	if (kind == 1)
@@ -393,7 +407,7 @@ void Increase_Point(int k, float n)
 			break;
 		}
 		if (ok) Make_Food('#', 3);
-		else Increase_Process();
+		Increase_Process();
 	}
 }
 
@@ -429,10 +443,16 @@ void Make_Food(char ch, int k)
 		} while (!isOK_Food(x, y));
 	}
 	c[x][y] = k;
+	if (k == 4)
+	{
+		xx = x;
+		yy = y;
+	}
 	COORD t = GetConsoleCursorPosition();
 	Gotoxy(x, y);
 	int color = rand() % (15 - 1 + 1) + 1;
-	ChangeColor(color);
+	if (ch == '@') ChangeColor(47);
+		else ChangeColor(color);
 	cout << ch;
 	ChangeColor(14);
 	Gotoxy(t.X, t.Y);

@@ -10,6 +10,7 @@ using namespace std;
 
 extern FILE* f;
 extern int sp, pt, length, dir, kind, vip, pass, x[200], y[200];
+extern float thoigian;
 extern short c[200][100];
 int k, c1, c2, t;
 
@@ -732,6 +733,7 @@ void New_Game()
 			case 7: Campaign();
 				break;
 			}
+			Snake_Init();
 			return;
 		case 2: Speed();
 			break;
@@ -769,7 +771,7 @@ void Resume_Game()
 		{
 		case 0:
 			system("cls");
-			fscanf(f, "%d%d%d%d%d", &kind, &sp, &pt, &dir, &length);
+			fscanf(f, "%d%d%d%d%d%d%f", &kind, &sp, &pt, &dir, &length, &vip, &thoigian);
 			switch (kind)
 			{
 			case 1: Classic();
@@ -811,6 +813,8 @@ void Resume_Game()
 				if (pass == 20) Make_Food('#', 3);
 				break;
 			}
+			Make_Food('$', 2);
+			if (thoigian > 0) Make_Food('@', 4);
 			while (!_kbhit())
 			{
 			}
@@ -863,7 +867,6 @@ void Classic()
 	for (int i = 0; i < 120; i++) cout << "_";
 	ChangeColor(15);
 	cout << "\n\n\tScore: " << pt;
-	Snake_Init();
 }
 
 void Select_Modern()
@@ -1454,7 +1457,6 @@ void Modern()
 	}
 	ChangeColor(15);
 	cout << "\n\n\tScore: " << pt;
-	Snake_Init();
 }
 
 void Campaign()
@@ -1464,6 +1466,7 @@ void Campaign()
 	if (t == 0)
 	{
 		pass = 0;
+		vip = 0;
 		length = 1;
 		for (int i = 20; i <= 100; i++)
 			for (int j = 4; j <= 24; j++)
@@ -1530,18 +1533,13 @@ void Campaign()
 	cout << "Score: " << pt;
 	Gotoxy(30, 27);
 	cout << "Process: ";
-	if (t == 0)
+	if (kind > 7)
 	{
-		Snake_Init();
+		Make_Food('$', 2);
 		while (!_kbhit())
 		{
 		}
 		char ch = _getch();
 	}
-	else
-	{
-		t = 0;
-		if (kind < 7 || (((kind == 7 || kind == 8) && pass < 30) || ((kind == 9 || kind == 10) && pass < 25)
-			|| (kind == 11 && pass < 20))) Make_Food('$', 2);
-	}
+	if (t != 0) t = 0;
 }
